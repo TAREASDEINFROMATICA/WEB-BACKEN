@@ -1,0 +1,27 @@
+/* Estilos específicos para el header */
+.navbar-brand {
+    font-weight: 700;
+}
+
+.carrito-badge {
+    position: relative;
+    top: -2px;
+    font-size: 0.7em;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.nav-link {
+    transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+    color: #fff !important;
+}
