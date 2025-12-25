@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar {{ tabla }} - ID: {{ id_valor }}</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .info-box { background: #e8f4fc; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>✏️ Editar {{ tabla }} - ID: {{ id_valor }}</h2>
+        
+        <div class="info-box">
+            <strong>Tipo de fragmentación:</strong> {{ config.tipo|upper }}<br>
+            <strong>Clave primaria:</strong> {{ config.primary_key }}
+        </div>
+        
+        <form method="POST" action="{{ url_for('editar_registro', tabla=tabla, id_valor=id_valor) }}">
+            {% if config.tipo == 'replica' %}
+                <p>⚠️ Este cambio se replicará en TODAS las bases de datos.</p>
+                {% for columna in config.columnas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">{{ columna }}:</label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           value="{{ datos.get(columna, '') }}" 
+                           {% if columna == config.primary_key %}readonly{% endif %}>
+                </div>
+                {% endfor %}
+            
+            {% elif config.tipo == 'horizontal' %}
+                <p>📍 Este registro se distribuye según la CIUDAD.</p>
+                <p><strong>Sur:</strong> Lima, Arequipa, Cusco</p>
+                <p><strong>Norte:</strong> Trujillo, Chiclayo, Piura</p>
+                {% for columna in config.columnas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">{{ columna }}:</label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           value="{{ datos.get(columna, '') }}"
+                           {% if columna == config.primary_key %}readonly{% endif %}>
+                </div>
+                {% endfor %}
+            
+            {% elif config.tipo == 'vertical' %}
+                <p>📋 Este registro está dividido verticalmente entre bases.</p>
+                {% set todas_columnas = config.columnas_centro + config.columnas_nodos %}
+                {% set columnas_unicas = [] %}
+                {% for col in todas_columnas %}
+                    {% if col not in columnas_unicas %}
+                        {% set _ = columnas_unicas.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                {% for columna in columnas_unicas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">{{ columna }}:</label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           value="{{ datos.get(columna, '') }}"
+                           {% if columna == config.primary_key %}readonly{% endif %}>
+                </div>
+                {% endfor %}
+            
+            {% elif config.tipo == 'mixto' %}
+                <p>🔀 Fragmentación mixta (horizontal + vertical)</p>
+                {% set todas_columnas = config.columnas_centro + config.columnas_nodos %}
+                {% set columnas_unicas = [] %}
+                {% for col in todas_columnas %}
+                    {% if col not in columnas_unicas %}
+                        {% set _ = columnas_unicas.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                {% for columna in columnas_unicas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">{{ columna }}:</label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           value="{{ datos.get(columna, '') }}"
+                           {% if columna == config.primary_key %}readonly{% endif %}>
+                </div>
+                {% endfor %}
+            
+            {% else %}
+                <p>Tipo de fragmentación desconocido.</p>
+            {% endif %}
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                <a href="{{ url_for('ver_tabla', tipo_bd='centro', nombre_tabla=tabla) }}" class="btn btn-secondary">Cancelar</a>
+                <button type="button" onclick="eliminarRegistro()" class="btn btn-danger">Eliminar</button>
+            </div>
+        </form>
+    </div>
+    
+    <script>
+    function eliminarRegistro() {
+        if (confirm('¿Estás seguro de eliminar este registro? Esta acción sincronizará en todas las bases según el tipo de fragmentación.')) {
+            fetch("{{ url_for('eliminar_registro', tabla=tabla, id_valor=id_valor) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.href = "{{ url_for('ver_tabla', tipo_bd='centro', nombre_tabla=tabla) }}";
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>

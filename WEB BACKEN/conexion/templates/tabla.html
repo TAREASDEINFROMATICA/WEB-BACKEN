@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ nombre_tabla }} - {{ nombre_bd }}</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background: #3498db; color: white; }
+        tr:hover { background: #f5f5f5; }
+        .btn { padding: 8px 16px; border-radius: 5px; text-decoration: none; margin: 5px; display: inline-block; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .fragmentacion-badge {
+            background: #9b59b6;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        .acciones-cell { white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('index') }}" style="color: white; text-decoration: none;">← Volver</a>
+        <h2>📋 {{ nombre_tabla }}</h2>
+        <p><strong>Base de datos:</strong> {{ nombre_bd }}</p>
+        <p><strong>Tipo de fragmentación:</strong> 
+            <span class="fragmentacion-badge">{{ tipo_fragmentacion|upper }}</span>
+        </p>
+        {% if tipo_bd == 'centro' %}
+        <a href="{{ url_for('insertar', tabla=nombre_tabla) }}" class="btn btn-primary">+ Insertar Nuevo</a>
+        {% endif %}
+    </div>
+    
+    {% if columnas %}
+        <table>
+            <thead>
+                <tr>
+                    {% for columna in columnas %}
+                    <th>{{ columna }}</th>
+                    {% endfor %}
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for fila in datos %}
+                <tr>
+                    {% for valor in fila %}
+                    <td>
+                        {% if valor is none %}
+                            <span style="color: #999;">NULL</span>
+                        {% else %}
+                            {{ valor }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    <td class="acciones-cell">
+                        {% if tipo_bd == 'centro' and fila[0] %}
+                        <a href="{{ url_for('editar_registro', tabla=nombre_tabla, id_valor=fila[0]) }}" 
+                           class="btn btn-success">Editar</a>
+                        <button onclick="eliminarRegistro('{{ nombre_tabla }}', '{{ fila[0] }}')" 
+                                class="btn btn-danger">
+                            Eliminar
+                        </button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay datos en esta tabla.</p>
+    {% endif %}
+    
+    <script>
+    function eliminarRegistro(tabla, id) {
+        if (confirm('¿Estás seguro de eliminar este registro? Esta acción se sincronizará en todas las bases según el tipo de fragmentación.')) {
+            fetch(`/eliminar/${tabla}/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+    </script>
+</body>
+</html>

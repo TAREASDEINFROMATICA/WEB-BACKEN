@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Cementerios Distribuidos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f2f5; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        .bd-card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border-left: 5px solid; }
+        .bd-card.sur { border-left-color: #3498db; }
+        .bd-card.centro { border-left-color: #2ecc71; }
+        .bd-card.norte { border-left-color: #e74c3c; }
+        .tabla-item { background: #f8f9fa; padding: 12px; border-radius: 6px; margin: 8px 0; display: flex; justify-content: space-between; align-items: center; }
+        .btn { padding: 8px 16px; border-radius: 5px; text-decoration: none; font-weight: bold; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-success { background: #2ecc71; color: white; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .nav-bar { display: flex; gap: 15px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ Sistema de Cementerios Distribuidos</h1>
+        <p>Gestión de Bases de Datos Fragmentadas</p>
+    </div>
+    
+    <div class="nav-bar">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">Inicio</a>
+        <a href="{{ url_for('estado') }}" class="btn btn-success">Estado Sincronización</a>
+        <a href="{{ url_for('consultas') }}" class="btn btn-info">Consultas Estadísticas</a>
+    </div>
+    
+    {% for bd in bds_info %}
+    <div class="bd-card {{ bd.tipo }}">
+        <h2>
+            {% if bd.tipo == 'sur' %} 📘 SUR (MariaDB)
+            {% elif bd.tipo == 'centro' %} 📗 CENTRO (SQL Server)
+            {% else %} 📙 NORTE (SQL Server) {% endif %}
+            <span style="float: right; background: #7f8c8d; color: white; padding: 5px 15px; border-radius: 20px;">
+                {{ bd.count_tablas }} tablas
+            </span>
+        </h2>
+        
+        {% if bd.error %}
+            <div style="background: #ffeaa7; padding: 15px; border-radius: 5px;">
+                ❌ {{ bd.error }}
+            </div>
+        {% else %}
+            <div style="margin-top: 20px;">
+                <h3>Tablas disponibles:</h3>
+                {% for tabla in bd.tablas %}
+                <div class="tabla-item">
+                    <span>📊 {{ tabla }}</span>
+                    <div>
+                        <a href="{{ url_for('ver_tabla', tipo_bd=bd.tipo, nombre_tabla=tabla) }}" class="btn btn-primary">
+                            Ver
+                        </a>
+                        {% if bd.tipo == 'centro' %}
+                        <a href="{{ url_for('insertar', tabla=tabla) }}" class="btn btn-success">
+                            + Insertar
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</body>
+</html>

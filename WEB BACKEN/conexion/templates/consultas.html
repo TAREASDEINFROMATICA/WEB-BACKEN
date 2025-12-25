@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas del Sistema de Cementerios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 4px solid #3498db;
+        }
+        
+        .card-consulta {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+        }
+        
+        .card-consulta:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card-consulta .card-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .btn-consulta {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-consulta:hover {
+            background: linear-gradient(135deg, #2980b9, #3498db);
+            transform: scale(1.05);
+        }
+        
+        .resultado-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .table-custom {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .table-custom thead {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+        }
+        
+        .badge-south {
+            background-color: #e74c3c;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        
+        .badge-north {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        
+        .estadistica-box {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .numero-grande {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .error-message {
+            background-color: #ffe6e6;
+            border-left: 4px solid #e74c3c;
+            padding: 1rem;
+            border-radius: 5px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold">
+                        <i class="fas fa-chart-line me-3"></i>
+                        Sistema de Consultas - Cementerios
+                    </h1>
+                    <p class="lead">Consultas estadísticas y análisis de datos del sistema fragmentado</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-home me-2"></i>Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <div class="container">
+        <!-- Tarjetas de Consultas -->
+        <div class="row g-4 mb-5">
+            <!-- Consulta 1 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-consulta p-4 text-center">
+                    <div class="card-icon">
+                        <i class="fas fa-archway"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Cementerios por Zona</h5>
+                    <p class="card-text text-muted">
+                        Descubre qué zonas tienen más cementerios y visualiza todos los cementerios disponibles.
+                    </p>
+                    <button class="btn btn-consulta w-100 mt-3" onclick="ejecutarConsulta(1)">
+                        <i class="fas fa-search me-2"></i>Ejecutar Consulta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Consulta 2 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-consulta p-4 text-center">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Difuntos por Cementerio</h5>
+                    <p class="card-text text-muted">
+                        Encuentra qué cementerio tiene más difuntos y analiza la distribución por zonas.
+                    </p>
+                    <button class="btn btn-consulta w-100 mt-3" onclick="ejecutarConsulta(2)">
+                        <i class="fas fa-search me-2"></i>Ejecutar Consulta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Consulta 3 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-consulta p-4 text-center">
+                    <div class="card-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Difuntos por Zona</h5>
+                    <p class="card-text text-muted">
+                        Identifica qué zona tiene más difuntos y obtén detalles específicos por zona.
+                    </p>
+                    <button class="btn btn-consulta w-100 mt-3" onclick="ejecutarConsulta(3)">
+                        <i class="fas fa-search me-2"></i>Ejecutar Consulta
+                    </button>
+                </div>
+            </div>
+
+            <!-- Consulta 4 -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card card-consulta p-4 text-center">
+                    <div class="card-icon">
+                        <i class="fas fa-truck-moving"></i>
+                    </div>
+                    <h5 class="card-title fw-bold text-dark">Traslados por Zona</h5>
+                    <p class="card-text text-muted">
+                        Analiza cuántos traslados se realizaron en cada zona y las rutas más comunes.
+                    </p>
+                    <button class="btn btn-consulta w-100 mt-3" onclick="ejecutarConsulta(4)">
+                        <i class="fas fa-search me-2"></i>Ejecutar Consulta
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spinner de Carga -->
+        <div id="loadingSpinner" class="loading-spinner">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-3 text-muted">Procesando consulta, por favor espere...</p>
+        </div>
+
+        <!-- Resultados de la Consulta -->
+        <div id="resultadoContainer" class="resultado-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 id="resultadoTitulo" class="mb-0">Resultados de la Consulta</h3>
+                <button class="btn btn-outline-secondary" onclick="limpiarResultados()">
+                    <i class="fas fa-times me-2"></i>Limpiar
+                </button>
+            </div>
+            
+            <div id="resultadoContenido">
+                <!-- Aquí se mostrarán los resultados dinámicamente -->
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle me-2"></i>Información del Sistema</h5>
+                    <p class="mb-1"><strong>Sistema Fragmentado:</strong> Los datos están distribuidos entre 3 bases de datos:</p>
+                    <ul class="mb-0">
+                        <li><span class="badge bg-danger">SUR</span> MariaDB - Cementerios del Sur</li>
+                        <li><span class="badge bg-primary">CENTRO</span> SQL Server - Base Central</li>
+                        <li><span class="badge bg-success">NORTE</span> SQL Server - Cementerios del Norte</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // URLs de las APIs
+        const API_URLS = {
+            1: '/api/consulta_cementerios',
+            2: '/api/consulta_difuntos_cementerio',
+            3: '/api/consulta_difuntos_zona',
+            4: '/api/consulta_traslados_zona'
+        };
+
+        // Títulos de las consultas
+        const CONSULTA_TITULOS = {
+            1: 'Cementerios por Zona',
+            2: 'Difuntos por Cementerio',
+            3: 'Difuntos por Zona',
+            4: 'Traslados por Zona'
+        };
+
+        function ejecutarConsulta(numeroConsulta) {
+            // Mostrar spinner
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('resultadoContainer').style.display = 'none';
+            
+            // Cambiar título
+            document.getElementById('resultadoTitulo').textContent = CONSULTA_TITULOS[numeroConsulta];
+            
+            // Hacer la petición AJAX
+            fetch(API_URLS[numeroConsulta])
+                .then(response => response.json())
+                .then(data => {
+                    // Ocultar spinner
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    
+                    if (data.success) {
+                        mostrarResultados(numeroConsulta, data.data);
+                    } else {
+                        mostrarError(data.error);
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loadingSpinner').style.display = 'none';
+                    mostrarError('Error de conexión: ' + error.message);
+                });
+        }
+
+        function mostrarResultados(numeroConsulta, data) {
+            const contenido = document.getElementById('resultadoContenido');
+            let html = '';
+            
+            switch(numeroConsulta) {
+                case 1: // Cementerios por zona
+                    html = generarHTMLCementerios(data);
+                    break;
+                case 2: // Difuntos por cementerio
+                    html = generarHTMLDifuntosCementerio(data);
+                    break;
+                case 3: // Difuntos por zona
+                    html = generarHTMLDifuntosZona(data);
+                    break;
+                case 4: // Traslados por zona
+                    html = generarHTMLTraslados(data);
+                    break;
+            }
+            
+            contenido.innerHTML = html;
+            document.getElementById('resultadoContainer').style.display = 'block';
+            
+            // Scroll a los resultados
+            document.getElementById('resultadoContainer').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+
+        function generarHTMLCementerios(data) {
+            let html = '';
+            
+            // Estadísticas principales
+            if (data.zona_mas_cementerios) {
+                html += `
+                    <div class="estadistica-box">
+                        <h4><i class="fas fa-trophy me-2"></i>Zona con más cementerios</h4>
+                        <div class="numero-grande">${data.zona_mas_cementerios.zona}</div>
+                        <p class="mb-0">Con ${data.zona_mas_cementerios.cantidad} cementerios registrados</p>
+                    </div>
+                `;
+            }
+            
+            // Tabla de cementerios por zona
+            if (data.cementerios_por_zona && data.cementerios_por_zona.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-chart-bar me-2"></i>Distribución por Zona</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-map-marker-alt"></i> Zona</th>
+                                    <th><i class="fas fa-archway"></i> Cantidad de Cementerios</th>
+                                    <th><i class="fas fa-percentage"></i> Porcentaje</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                const totalCementerios = data.cementerios_por_zona.reduce((sum, row) => sum + row[1], 0);
+                
+                data.cementerios_por_zona.forEach(row => {
+                    const porcentaje = totalCementerios > 0 ? ((row[1] / totalCementerios) * 100).toFixed(2) : 0;
+                    const badgeClass = row[0] === 'SUR' ? 'badge-south' : 'badge-north';
+                    
+                    html += `
+                        <tr>
+                            <td><span class="${badgeClass}">${row[0] || 'Sin zona'}</span></td>
+                            <td><strong>${row[1]}</strong> cementerios</td>
+                            <td>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${porcentaje}%" 
+                                         aria-valuenow="${porcentaje}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        ${porcentaje}%
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Lista completa de cementerios
+            if (data.todos_cementerios && data.todos_cementerios.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-list me-2"></i>Todos los Cementerios</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Zona</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.todos_cementerios.forEach(cementerio => {
+                    const badgeClass = cementerio[2] === 'SUR' ? 'badge-south' : 
+                                     (cementerio[2] === 'NORTE' ? 'badge-north' : 'badge-secondary');
+                    
+                    html += `
+                        <tr>
+                            <td><code>${cementerio[0]}</code></td>
+                            <td><strong>${cementerio[1] || 'Sin nombre'}</strong></td>
+                            <td><span class="${badgeClass}">${cementerio[2] || 'Sin zona'}</span></td>
+                            <td>${cementerio[3] || 'No especificado'}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            if (data.error) {
+                html += `<div class="error-message"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            }
+            
+            return html;
+        }
+
+        function generarHTMLDifuntosCementerio(data) {
+            let html = '';
+            
+            // Cementerio con más difuntos
+            if (data.cementerio_mas_difuntos) {
+                html += `
+                    <div class="estadistica-box">
+                        <h4><i class="fas fa-crown me-2"></i>Cementerio con más difuntos</h4>
+                        <div class="numero-grande">${data.cementerio_mas_difuntos.nombre}</div>
+                        <p class="mb-1">
+                            <span class="badge ${data.cementerio_mas_difuntos.zona === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                ${data.cementerio_mas_difuntos.zona}
+                            </span>
+                        </p>
+                        <p class="mb-0">Con ${data.cementerio_mas_difuntos.cantidad_difuntos} difuntos registrados</p>
+                    </div>
+                `;
+            }
+            
+            // Tabla de difuntos por cementerio
+            if (data.difuntos_por_cementerio && data.difuntos_por_cementerio.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-chart-pie me-2"></i>Difuntos por Cementerio</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Cementerio</th>
+                                    <th>Zona</th>
+                                    <th>Cantidad de Difuntos</th>
+                                    <th>Posición</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.difuntos_por_cementerio.forEach((cementerio, index) => {
+                    const badgeClass = cementerio[2] === 'SUR' ? 'badge-south' : 'badge-north';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${cementerio[1]}</strong></td>
+                            <td><span class="${badgeClass}">${cementerio[2]}</span></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-2">${cementerio[3]}</div>
+                                    <div class="progress flex-grow-1" style="height: 8px;">
+                                        <div class="progress-bar" role="progressbar" 
+                                             style="width: ${Math.min(100, cementerio[3] * 2)}%" 
+                                             aria-valuenow="${cementerio[3]}" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge ${index === 0 ? 'bg-warning text-dark' : 'bg-secondary'}">
+                                    #${index + 1}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Difuntos por zona
+            if (data.difuntos_por_zona && data.difuntos_por_zona.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-map-marked-alt me-2"></i>Difuntos por Zona</h5>
+                    <div class="row">
+                `;
+                
+                data.difuntos_por_zona.forEach(zona => {
+                    html += `
+                        <div class="col-md-6 mb-3">
+                            <div class="p-3 border rounded bg-light">
+                                <h6>
+                                    <span class="badge ${zona[0] === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                        ${zona[0]}
+                                    </span>
+                                </h6>
+                                <div class="fs-4 fw-bold">${zona[1]} difuntos</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            if (data.error) {
+                html += `<div class="error-message"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            }
+            
+            return html;
+        }
+
+        function generarHTMLDifuntosZona(data) {
+            let html = '';
+            
+            // Zona con más difuntos
+            if (data.zona_top_difuntos) {
+                html += `
+                    <div class="estadistica-box">
+                        <h4><i class="fas fa-medal me-2"></i>Zona con más difuntos</h4>
+                        <div class="numero-grande">${data.zona_top_difuntos.zona}</div>
+                        <p class="mb-1">${data.zona_top_difuntos.cantidad} difuntos registrados</p>
+                        <p class="mb-0">Representa el ${data.zona_top_difuntos.porcentaje}% del total</p>
+                    </div>
+                `;
+            }
+            
+            // Distribución por zona
+            if (data.difuntos_por_zona_detalle && data.difuntos_por_zona_detalle.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-chart-bar me-2"></i>Distribución por Zona</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Zona</th>
+                                    <th>Cantidad de Difuntos</th>
+                                    <th>Porcentaje</th>
+                                    <th>Gráfico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                const totalDifuntos = data.difuntos_por_zona_detalle.reduce((sum, row) => sum + row[1], 0);
+                
+                data.difuntos_por_zona_detalle.forEach(row => {
+                    const porcentaje = totalDifuntos > 0 ? ((row[1] / totalDifuntos) * 100).toFixed(2) : 0;
+                    const badgeClass = row[0] === 'SUR' ? 'badge-south' : 
+                                     (row[0] === 'NORTE' ? 'badge-north' : 'badge-secondary');
+                    
+                    html += `
+                        <tr>
+                            <td><span class="${badgeClass}">${row[0] || 'Sin zona'}</span></td>
+                            <td><strong>${row[1]}</strong> difuntos</td>
+                            <td>${porcentaje}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${porcentaje}%" 
+                                         aria-valuenow="${porcentaje}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                </div>
+                `;
+            }
+            
+            // Total de difuntos
+            if (data.total_difuntos_sistema !== undefined) {
+                html += `
+                    <div class="alert alert-success mt-4">
+                        <h5><i class="fas fa-users me-2"></i>Total en el Sistema</h5>
+                        <div class="fs-2 fw-bold">${data.total_difuntos_sistema} difuntos</div>
+                        <p class="mb-0">Distribuidos en todo el sistema fragmentado</p>
+                    </div>
+                `;
+            }
+            
+            if (data.error) {
+                html += `<div class="error-message"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            }
+            
+            return html;
+        }
+
+        function generarHTMLTraslados(data) {
+            let html = '';
+            
+            // Resumen de traslados
+            if (data.total_traslados !== undefined) {
+                html += `
+                    <div class="estadistica-box">
+                        <h4><i class="fas fa-truck-loading me-2"></i>Total de Traslados</h4>
+                        <div class="numero-grande">${data.total_traslados}</div>
+                        <p class="mb-0">Traslados registrados en el sistema</p>
+                    </div>
+                `;
+            }
+            
+            // Traslados entre zonas
+            if (data.traslados_entre_zonas && data.traslados_entre_zonas.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-exchange-alt me-2"></i>Traslados entre Zonas</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Origen</th>
+                                    <th>Destino</th>
+                                    <th>Cantidad</th>
+                                    <th>Ruta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.traslados_entre_zonas.forEach(traslado => {
+                    html += `
+                        <tr>
+                            <td>
+                                <span class="badge ${traslado[0] === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                    ${traslado[0]}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge ${traslado[1] === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                    ${traslado[1]}
+                                </span>
+                            </td>
+                            <td><strong>${traslado[2]}</strong> traslados</td>
+                            <td>
+                                <i class="fas fa-arrow-right text-muted me-1"></i>
+                                ${traslado[0]} → ${traslado[1]}
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Traslados por origen y destino
+            if (data.traslados_por_origen && data.traslados_por_destino) {
+                html += `
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-sign-out-alt me-2"></i>Traslados por Origen</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tbody>
+                `;
+                
+                data.traslados_por_origen.forEach(origen => {
+                    html += `
+                        <tr>
+                            <td><span class="badge ${origen[0] === 'SUR' ? 'badge-south' : 'badge-north'}">${origen[0]}</span></td>
+                            <td>${origen[1]} traslados salientes</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-sign-in-alt me-2"></i>Traslados por Destino</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <tbody>
+                `;
+                
+                data.traslados_por_destino.forEach(destino => {
+                    html += `
+                        <tr>
+                            <td><span class="badge ${destino[0] === 'SUR' ? 'badge-south' : 'badge-north'}">${destino[0]}</span></td>
+                            <td>${destino[1]} traslados entrantes</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Traslados recientes
+            if (data.traslados_recientes && data.traslados_recientes.length > 0) {
+                html += `
+                    <h5 class="mt-4 mb-3"><i class="fas fa-history me-2"></i>Traslados Recientes</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Motivo</th>
+                                    <th>Origen → Destino</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.traslados_recientes.slice(0, 10).forEach(traslado => {
+                    html += `
+                        <tr>
+                            <td>${traslado[1] ? new Date(traslado[1]).toLocaleDateString() : 'N/A'}</td>
+                            <td>${traslado[2] || 'No especificado'}</td>
+                            <td>
+                                <span class="badge ${traslado[5] === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                    ${traslado[5] || 'N/A'}
+                                </span>
+                                <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                                <span class="badge ${traslado[6] === 'SUR' ? 'badge-south' : 'badge-north'}">
+                                    ${traslado[6] || 'N/A'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            if (data.error) {
+                html += `<div class="error-message"><i class="fas fa-exclamation-triangle me-2"></i>${data.error}</div>`;
+            }
+            
+            return html;
+        }
+
+        function mostrarError(mensaje) {
+            const contenido = document.getElementById('resultadoContenido');
+            contenido.innerHTML = `
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle me-2"></i>Error en la consulta</h5>
+                    <p class="mb-0">${mensaje}</p>
+                </div>
+            `;
+            document.getElementById('resultadoContainer').style.display = 'block';
+        }
+
+        function limpiarResultados() {
+            document.getElementById('resultadoContenido').innerHTML = '';
+            document.getElementById('resultadoContainer').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

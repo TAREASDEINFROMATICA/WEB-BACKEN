@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Insertar en {{ tabla }}</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 800px; margin: 0 auto; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .info-box { background: #e8f4fc; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .required { color: red; }
+        .auto-field { background-color: #f0f0f0; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>➕ Insertar en {{ tabla }}</h2>
+        
+        <div class="info-box">
+            <strong>Tipo de fragmentación:</strong> {{ config.tipo|upper }}<br>
+            <strong>Clave primaria:</strong> {{ config.primary_key }}
+            {% if config.tipo == 'mixto' and tabla == 'Pago_Mixto' %}
+            <br><strong>⚠️ IMPORTANTE:</strong> Debes seleccionar ZONA (SUR o NORTE)
+            {% endif %}
+        </div>
+        
+        <form method="POST" action="{{ url_for('insertar', tabla=tabla) }}">
+            
+            <!-- 1. RÉPLICA -->
+            {% if config.tipo == 'replica' %}
+                <p>⚠️ Este registro se replicará en TODAS las bases de datos.</p>
+                {% for columna in config.columnas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">
+                        {{ columna }}
+                        {% if columna == config.primary_key %}<span class="required">*</span>{% endif %}
+                    </label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           placeholder="Valor para {{ columna }}" 
+                           {% if columna == config.primary_key %}required{% endif %}>
+                </div>
+                {% endfor %}
+            
+            <!-- 2. HORIZONTAL (Nicho, Responsable) CORREGIDO -->
+            {% elif config.tipo == 'horizontal' %}
+                <p>📍 Este registro se distribuirá según la CIUDAD:</p>
+                <p><strong>Sur:</strong> Lima, Arequipa, Cusco (irá a base SUR)</p>
+                <p><strong>Norte:</strong> Trujillo, Chiclayo, Piura (irá a base NORTE)</p>
+                
+                {% for columna in config.columnas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">
+                        {{ columna }}
+                        {% if columna == config.primary_key or columna == 'ciudad' %}<span class="required">*</span>{% endif %}
+                    </label>
+                    
+                    {% if columna == 'zona' %}
+                        {# CAMPO ZONA: NO EDITABLE, se calcula automáticamente #}
+                        <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                               class="auto-field"
+                               value="(Se calculará automáticamente)" 
+                               readonly>
+                        <small style="color: #666;">La zona se determina automáticamente según la ciudad</small>
+                    
+                    {% elif columna == 'ciudad' %}
+                        {# CAMPO CIUDAD: SELECT con opciones #}
+                        <select id="{{ columna }}" name="{{ columna }}" required onchange="actualizarZona()">
+                            <option value="">-- Seleccionar ciudad --</option>
+                            <option value="Lima">Lima (Zona: SUR)</option>
+                            <option value="Arequipa">Arequipa (Zona: SUR)</option>
+                            <option value="Cusco">Cusco (Zona: SUR)</option>
+                            <option value="Trujillo">Trujillo (Zona: NORTE)</option>
+                            <option value="Chiclayo">Chiclayo (Zona: NORTE)</option>
+                            <option value="Piura">Piura (Zona: NORTE)</option>
+                        </select>
+                        <small style="color: #666;">Elige la ciudad para determinar la zona automáticamente</small>
+                    
+                    {% else %}
+                        {# OTROS CAMPOS: texto normal #}
+                        <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                               placeholder="Valor para {{ columna }}"
+                               {% if columna == config.primary_key %}required{% endif %}>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            
+            <!-- 3. VERTICAL -->
+            {% elif config.tipo == 'vertical' %}
+                <p>📋 Este registro se dividirá verticalmente entre bases.</p>
+                <p><strong>Centro:</strong> {{ config.columnas_centro|join(', ') }}</p>
+                <p><strong>Nodos:</strong> {{ config.columnas_nodos|join(', ') }}</p>
+                
+                {# Combinar todas las columnas sin duplicados #}
+                {% set todas_columnas = [] %}
+                {% for col in config.columnas_centro %}
+                    {% if col not in todas_columnas %}
+                        {% set _ = todas_columnas.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                {% for col in config.columnas_nodos %}
+                    {% if col not in todas_columnas %}
+                        {% set _ = todas_columnas.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% for columna in todas_columnas %}
+                <div class="form-group">
+                    <label for="{{ columna }}">
+                        {{ columna }}
+                        {% if columna == config.primary_key %}<span class="required">*</span>{% endif %}
+                    </label>
+                    <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                           placeholder="Valor para {{ columna }}"
+                           {% if columna == config.primary_key %}required{% endif %}>
+                </div>
+                {% endfor %}
+            
+            <!-- 4. MIXTO (Pago_Mixto, Traslado_Mixto) -->
+            {% elif config.tipo == 'mixto' %}
+                <p>🔀 Fragmentación mixta (horizontal + vertical)</p>
+                <p><strong>Centro (con zona):</strong> {{ config.columnas_centro|join(', ') }}</p>
+                <p><strong>Nodos (sin zona):</strong> {{ config.columnas_nodos|join(', ') }}</p>
+                
+                {# Mostrar ZONA como SELECT obligatorio #}
+                <div class="form-group">
+                    <label for="zona">
+                        zona <span class="required">*</span>
+                    </label>
+                    <select id="zona" name="zona" required>
+                        <option value="">-- Seleccionar zona --</option>
+                        <option value="SUR">SUR (Lima, Arequipa, Cusco)</option>
+                        <option value="NORTE">NORTE (Trujillo, Chiclayo, Piura)</option>
+                    </select>
+                    <small style="color: #666;">Define en qué base de datos se guardará el registro</small>
+                </div>
+                
+                {# Mostrar todas las columnas excepto 'zona' #}
+                {% set columnas_a_mostrar = [] %}
+                {% for col in config.columnas_centro %}
+                    {% if col not in columnas_a_mostrar and col != 'zona' %}
+                        {% set _ = columnas_a_mostrar.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                {% for col in config.columnas_nodos %}
+                    {% if col not in columnas_a_mostrar and col != 'zona' %}
+                        {% set _ = columnas_a_mostrar.append(col) %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% for columna in columnas_a_mostrar %}
+                    <div class="form-group">
+                        <label for="{{ columna }}">
+                            {{ columna }}
+                            {% if columna == config.primary_key %}<span class="required">*</span>{% endif %}
+                        </label>
+                        <input type="text" id="{{ columna }}" name="{{ columna }}" 
+                               placeholder="Valor para {{ columna }}"
+                               {% if columna == config.primary_key %}required{% endif %}>
+                    </div>
+                {% endfor %}
+            
+            {% else %}
+                <p>Tipo de fragmentación desconocido.</p>
+            {% endif %}
+            
+            <div style="display: flex; gap: 15px; margin-top: 30px;">
+                <button type="submit" class="btn btn-primary">Insertar y Sincronizar</button>
+                <a href="{{ url_for('ver_tabla', tipo_bd='centro', nombre_tabla=tabla) }}" class="btn btn-secondary">Cancelar</a>
+            </div>
+            
+            {% if config.tipo == 'mixto' %}
+            <div style="margin-top: 20px; padding: 10px; background: #fff3cd; border-radius: 5px;">
+                <strong>💡 Nota:</strong> 
+                Este registro se guardará en:<br>
+                ✅ <strong>CENTRO</strong>: Todas las columnas (incluyendo zona)<br>
+                ✅ <strong>{{ 'SUR o NORTE' }}</strong>: Solo columnas básicas (sin zona)
+            </div>
+            {% elif config.tipo == 'horizontal' %}
+            <div style="margin-top: 20px; padding: 10px; background: #e8f4fc; border-radius: 5px;">
+                <strong>💡 Nota:</strong> 
+                Este registro se guardará en:<br>
+                ✅ <strong>CENTRO</strong>: Todas las columnas (incluyendo zona calculada)<br>
+                ✅ <strong>{{ 'SUR o NORTE' }}</strong>: Solo columnas básicas (sin zona)<br>
+                <small>La zona se determina automáticamente: Lima/Arequipa/Cusco → SUR, Trujillo/Chiclayo/Piura → NORTE</small>
+            </div>
+            {% endif %}
+            
+        </form>
+    </div>
+
+    <script>
+        // Función para mostrar visualmente la zona según la ciudad seleccionada
+        function actualizarZona() {
+            const ciudadSelect = document.getElementById('ciudad');
+            const zonaInput = document.getElementById('zona');
+            
+            if (ciudadSelect && zonaInput) {
+                const ciudad = ciudadSelect.value;
+                const ciudadesSur = ['Lima', 'Arequipa', 'Cusco'];
+                const ciudadesNorte = ['Trujillo', 'Chiclayo', 'Piura'];
+                
+                if (ciudadesSur.includes(ciudad)) {
+                    zonaInput.value = 'SUR (calculado automáticamente)';
+                    zonaInput.style.color = 'green';
+                } else if (ciudadesNorte.includes(ciudad)) {
+                    zonaInput.value = 'NORTE (calculado automáticamente)';
+                    zonaInput.style.color = 'blue';
+                } else {
+                    zonaInput.value = '(Se calculará automáticamente)';
+                    zonaInput.style.color = '#666';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

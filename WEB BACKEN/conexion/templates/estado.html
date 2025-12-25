@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado de Sincronización</title>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: center; border: 1px solid #ddd; }
+        th { background: #3498db; color: white; }
+        .sincronizado { background: #d4edda; }
+        .no-sincronizado { background: #f8d7da; }
+        .badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+        .badge-replica { background: #3498db; color: white; }
+        .badge-horizontal { background: #2ecc71; color: white; }
+        .badge-vertical { background: #9b59b6; color: white; }
+        .badge-mixto { background: #f39c12; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('index') }}" style="color: white; text-decoration: none;">← Volver</a>
+        <h2>📊 Estado de Sincronización</h2>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Tabla</th>
+                <th>Tipo Fragmentación</th>
+                <th>Centro</th>
+                <th>Sur</th>
+                <th>Norte</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tabla, datos in estado_info.items() %}
+            <tr class="{% if datos.centro == datos.sur == datos.norte %}sincronizado{% else %}no-sincronizado{% endif %}">
+                <td><strong>{{ tabla }}</strong></td>
+                <td>
+                    {% if config[tabla].tipo == 'replica' %}
+                    <span class="badge badge-replica">RÉPLICA</span>
+                    {% elif config[tabla].tipo == 'horizontal' %}
+                    <span class="badge badge-horizontal">HORIZONTAL</span>
+                    {% elif config[tabla].tipo == 'vertical' %}
+                    <span class="badge badge-vertical">VERTICAL</span>
+                    {% elif config[tabla].tipo == 'mixto' %}
+                    <span class="badge badge-mixto">MIXTO</span>
+                    {% endif %}
+                </td>
+                <td>{{ datos.centro }}</td>
+                <td>{{ datos.sur }}</td>
+                <td>{{ datos.norte }}</td>
+                <td>
+                    {% if config[tabla].tipo == 'replica' %}
+                        {% if datos.centro == datos.sur == datos.norte %}
+                        ✅ Sincronizado
+                        {% else %}
+                        ⚠️ Desincronizado
+                        {% endif %}
+                    {% elif config[tabla].tipo == 'horizontal' %}
+                        ↕️ Fragmentado
+                    {% elif config[tabla].tipo == 'vertical' %}
+                        ⇅ Dividido
+                    {% elif config[tabla].tipo == 'mixto' %}
+                        🔀 Mixto
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
