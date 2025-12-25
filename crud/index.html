@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>CRUD entiEjemplo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    form, table { margin-top: 20px; }
+    input, button { padding: 6px 10px; margin: 5px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    table, th, td { border: 1px solid #aaa; }
+    th, td { padding: 8px; text-align: left; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .row-actions { display: flex; gap: 6px; }
+    #msg { margin-top: 10px; color: #006400; }
+    #err { margin-top: 10px; color: #a00000; }
+  </style>
+</head>
+<body>
+  <h1>CRUD entiEjemplo</h1>
+
+  <form id="formCrud">
+    <input type="hidden" id="id">
+    <input type="text" id="descripcion" placeholder="Descripción" required>
+    <button type="submit">Guardar</button>
+    <button type="button" id="btnCancelar">Cancelar</button>
+  </form>
+
+  <div id="msg"></div>
+  <div id="err"></div>
+
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Descripción</th><th>Acciones</th></tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+
+<script>
+const apiUrl = "api.php";
+const form = document.getElementById('formCrud');
+const tbody = document.getElementById('tbody');
+const msg = document.getElementById('msg');
+const err = document.getElementById('err');
+const idInput = document.getElementById('id');
+const descInput = document.getElementById('descripcion');
+
+function setMsg(t){ msg.textContent = t || ''; }
+function setErr(t){ err.textContent = t || ''; }
+
+async function read() {
+  setMsg(''); setErr('');
+  try {
+    const res = await fetch(`${apiUrl}?action=read`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error de lectura');
+    renderRows(json.data || []);
+  } catch (e) {
+    setErr('No se pudo leer: ' + e.message);
+    tbody.innerHTML = "<tr><td colspan='3'>Error</td></tr>";
+  }
+}
+
+function renderRows(rows){
+  if (!rows.length) {
+    tbody.innerHTML = "<tr><td colspan='3'>No hay registros</td></tr>";
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr data-id="${r.id}">
+      <td>${r.id}</td>
+      <td class="col-desc">${escapeHtml(r.descripcion)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn-edit" type="button">Editar</button>
+          <button class="btn-del" type="button">Eliminar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  setMsg(''); setErr('');
+  const id = idInput.value.trim();
+  const descripcion = descInput.value.trim();
+  if (!descripcion) { setErr('La descripción es obligatoria'); return; }
+
+  const action = id ? 'update' : 'create';
+  try {
+    const res = await fetch(`${apiUrl}?action=${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(id ? { id, descripcion } : { descripcion })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Error');
+    setMsg(id ? 'Actualizado ✅' : 'Creado ✅');
+    resetForm();
+    read();
+  } catch (e) {
+    setErr('No se pudo guardar: ' + e.message);
+  }
+});
+
+document.getElementById('btnCancelar').addEventListener('click', resetForm);
+
+function resetForm(){
+  idInput.value = '';
+  descInput.value = '';
+  descInput.focus();
+}
+
+// Delegación de eventos para Editar/Eliminar
+tbody.addEventListener('click', async (e)=>{
+  const tr = e.target.closest('tr[data-id]');
+  if (!tr) return;
+  const id = tr.getAttribute('data-id');
+
+  if (e.target.classList.contains('btn-edit')) {
+    const desc = tr.querySelector('.col-desc').textContent;
+    idInput.value = id;
+    descInput.value = desc;
+    descInput.focus();
+  }
+
+  if (e.target.classList.contains('btn-del')) {
+    if (!confirm('¿Seguro que deseas eliminar este registro?')) return;
+    setMsg(''); setErr('');
+    try {
+      const res = await fetch(`${apiUrl}?action=delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || 'Error');
+      setMsg('Eliminado ✅');
+      read();
+    } catch (e) {
+      setErr('No se pudo eliminar: ' + e.message);
+    }
+  }
+});
+
+window.addEventListener('load', read);
+</script>
+</body>
+</html>
